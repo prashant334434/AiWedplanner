@@ -1,16 +1,34 @@
-import { Text, View, StyleSheet, Image } from "react-native";
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '../store/authStore';
 
-const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+export default function SplashScreen() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuthStore();
 
-export default function Index() {
-  console.log(EXPO_PUBLIC_BACKEND_URL, "EXPO_PUBLIC_BACKEND_URL");
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!isLoading) {
+        if (isAuthenticated) {
+          router.replace('/(tabs)/home');
+        } else {
+          router.replace('/onboarding');
+        }
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, isAuthenticated]);
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require("../assets/images/app-image.png")}
-        style={styles.image}
-      />
+      <View style={styles.logoContainer}>
+        <Text style={styles.logo}>💍</Text>
+        <Text style={styles.title}>WedPlanner AI</Text>
+        <Text style={styles.tagline}>Your Dream Wedding, Perfectly Planned</Text>
+      </View>
+      <ActivityIndicator size="large" color="#8B5CF6" style={styles.loader} />
     </View>
   );
 }
@@ -18,13 +36,29 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0c0c0c",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: '#FDFCFB',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  image: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "contain",
+  logoContainer: {
+    alignItems: 'center',
+  },
+  logo: {
+    fontSize: 80,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  tagline: {
+    fontSize: 16,
+    color: '#6B7280',
+    fontStyle: 'italic',
+  },
+  loader: {
+    marginTop: 40,
   },
 });
