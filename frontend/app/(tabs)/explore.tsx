@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,23 +6,47 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { getVenues, getVendors } from '../../utils/api';
 
 const categories = [
   { id: 'venues', title: 'Venues', icon: 'business', color: '#8B5CF6' },
   { id: 'decorations', title: 'Decorations', icon: 'color-palette', color: '#EC4899' },
   { id: 'caterers', title: 'Catering', icon: 'restaurant', color: '#F59E0B' },
-  { id: 'photographers', title: 'Photographers', icon: 'camera', color: '#10B981' },
-  { id: 'djs', title: 'DJs & Music', icon: 'musical-notes', color: '#3B82F6' },
+  { id: 'photographer', title: 'Photographers', icon: 'camera', color: '#10B981' },
+  { id: 'dj', title: 'DJs & Music', icon: 'musical-notes', color: '#3B82F6' },
   { id: 'makeup', title: 'Makeup Artists', icon: 'brush', color: '#EF4444' },
 ];
 
 export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [venues, setVenues] = useState<any[]>([]);
+  const [vendors, setVendors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [venuesData, vendorsData] = await Promise.all([
+        getVenues(),
+        getVendors(),
+      ]);
+      setVenues(venuesData.slice(0, 3));
+      setVendors(vendorsData.slice(0, 3));
+    } catch (error) {
+      console.error('Error loading explore data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -73,27 +97,35 @@ export default function ExploreScreen() {
             </TouchableOpacity>
           </View>
           
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {[1, 2, 3].map((item) => (
-              <TouchableOpacity key={item} style={styles.featuredCard}>
-                <View style={styles.featuredImage}>
-                  <Text style={styles.featuredEmoji}>🏰</Text>
-                </View>
-                <View style={styles.featuredContent}>
-                  <Text style={styles.featuredTitle}>Grand Palace</Text>
-                  <View style={styles.featuredRow}>
-                    <Ionicons name="location" size={14} color="#6B7280" />
-                    <Text style={styles.featuredLocation}>Mumbai</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#8B5CF6" />
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {venues.map((venue) => (
+                <TouchableOpacity
+                  key={venue._id}
+                  style={styles.featuredCard}
+                  onPress={() => router.push(`/venue/${venue._id}`)}
+                >
+                  <View style={styles.featuredImage}>
+                    <Text style={styles.featuredEmoji}>🏰</Text>
                   </View>
-                  <View style={styles.featuredRow}>
-                    <Ionicons name="star" size={14} color="#F59E0B" />
-                    <Text style={styles.featuredRating}>4.8 (120)</Text>
+                  <View style={styles.featuredContent}>
+                    <Text style={styles.featuredTitle}>{venue.name}</Text>
+                    <View style={styles.featuredRow}>
+                      <Ionicons name="location" size={14} color="#6B7280" />
+                      <Text style={styles.featuredLocation}>{venue.location}</Text>
+                    </View>
+                    <View style={styles.featuredRow}>
+                      <Ionicons name="star" size={14} color="#F59E0B" />
+                      <Text style={styles.featuredRating}>{venue.rating}</Text>
+                    </View>
+                    <Text style={styles.featuredPrice}>{venue.price_range}</Text>
                   </View>
-                  <Text style={styles.featuredPrice}>₹5L - ₹10L</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
         </View>
 
         {/* Top Vendors */}
@@ -105,22 +137,30 @@ export default function ExploreScreen() {
             </TouchableOpacity>
           </View>
           
-          {[1, 2, 3].map((item) => (
-            <TouchableOpacity key={item} style={styles.vendorCard}>
-              <View style={styles.vendorIcon}>
-                <Text style={styles.vendorEmoji}>📸</Text>
-              </View>
-              <View style={styles.vendorContent}>
-                <Text style={styles.vendorName}>John Photography</Text>
-                <Text style={styles.vendorCategory}>Professional Photographer</Text>
-                <View style={styles.vendorRow}>
-                  <Ionicons name="star" size={14} color="#F59E0B" />
-                  <Text style={styles.vendorRating}>4.9 (85 reviews)</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#8B5CF6" />
+          ) : (
+            vendors.map((vendor) => (
+              <TouchableOpacity
+                key={vendor._id}
+                style={styles.vendorCard}
+                onPress={() => router.push(`/vendor/${vendor._id}`)}
+              >
+                <View style={styles.vendorIcon}>
+                  <Text style={styles.vendorEmoji}>📸</Text>
                 </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-            </TouchableOpacity>
-          ))}
+                <View style={styles.vendorContent}>
+                  <Text style={styles.vendorName}>{vendor.name}</Text>
+                  <Text style={styles.vendorCategory}>{vendor.category.toUpperCase()}</Text>
+                  <View style={styles.vendorRow}>
+                    <Ionicons name="star" size={14} color="#F59E0B" />
+                    <Text style={styles.vendorRating}>{vendor.rating} rating</Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
