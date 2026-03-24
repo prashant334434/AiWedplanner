@@ -7,9 +7,12 @@ import {
   TouchableOpacity,
   FlatList,
   ViewToken,
+  Image,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
@@ -18,19 +21,19 @@ const slides = [
     id: '1',
     title: 'Find Perfect Venues',
     description: 'Discover stunning wedding venues that match your dream celebration',
-    emoji: '🏰',
+    image: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800',
   },
   {
     id: '2',
     title: 'Book Top Vendors',
     description: 'Connect with the best photographers, caterers, and decorators',
-    emoji: '📸',
+    image: 'https://images.pexels.com/photos/1043902/pexels-photo-1043902.jpeg?w=800',
   },
   {
     id: '3',
     title: 'AI-Powered Planning',
     description: 'Get personalized recommendations powered by artificial intelligence',
-    emoji: '🤖',
+    image: 'https://images.pexels.com/photos/7082467/pexels-photo-7082467.jpeg?w=800',
   },
 ];
 
@@ -38,10 +41,24 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0) {
       setCurrentIndex(viewableItems[0].index || 0);
+      // Fade animation on slide change
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 0.7,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   }).current;
 
@@ -63,91 +80,128 @@ export default function OnboardingScreen() {
 
   const renderItem = ({ item }: { item: typeof slides[0] }) => (
     <View style={styles.slide}>
-      <Text style={styles.emoji}>{item.emoji}</Text>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.description}>{item.description}</Text>
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ uri: item.image }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+        <LinearGradient
+          colors={['transparent', 'rgba(255, 248, 243, 0.9)', '#FFF8F3']}
+          style={styles.imageGradient}
+        />
+      </View>
+      <Animated.View style={[styles.textContainer, { opacity: fadeAnim }]}>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.description}>{item.description}</Text>
+      </Animated.View>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-        <Text style={styles.skipText}>Skip</Text>
-      </TouchableOpacity>
-
-      <FlatList
-        ref={flatListRef}
-        data={slides}
-        renderItem={renderItem}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        keyExtractor={(item) => item.id}
-      />
-
-      <View style={styles.bottomContainer}>
-        <View style={styles.pagination}>
-          {slides.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index === currentIndex ? styles.dotActive : styles.dotInactive,
-              ]}
-            />
-          ))}
-        </View>
-
-        <TouchableOpacity style={styles.button} onPress={handleNext}>
-          <Text style={styles.buttonText}>
-            {currentIndex === slides.length - 1 ? "Get Started" : "Next"}
-          </Text>
+    <LinearGradient
+      colors={['#FFF8F3', '#FFE8DC']}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+          <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+
+        <FlatList
+          ref={flatListRef}
+          data={slides}
+          renderItem={renderItem}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          keyExtractor={(item) => item.id}
+        />
+
+        <View style={styles.bottomContainer}>
+          <View style={styles.pagination}>
+            {slides.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  index === currentIndex ? styles.dotActive : styles.dotInactive,
+                ]}
+              />
+            ))}
+          </View>
+
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={handleNext}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.buttonText}>
+              {currentIndex === slides.length - 1 ? "Get Started" : "Next"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+  },
+  safeArea: {
+    flex: 1,
   },
   skipButton: {
     position: 'absolute',
     top: 50,
     right: 20,
     zIndex: 10,
-    padding: 8,
+    padding: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
   },
   skipText: {
-    color: '#8B5CF6',
-    fontSize: 16,
+    color: '#E97597',
+    fontSize: 15,
     fontWeight: '600',
   },
   slide: {
     width,
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
   },
-  emoji: {
-    fontSize: 120,
-    marginBottom: 40,
+  imageContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  imageGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 200,
+  },
+  textContainer: {
+    paddingHorizontal: 40,
+    paddingBottom: 40,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1F2937',
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#2D2D2D',
     marginBottom: 16,
     textAlign: 'center',
   },
   description: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#666666',
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -158,30 +212,35 @@ const styles = StyleSheet.create({
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 40,
+    marginBottom: 32,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    height: 4,
+    borderRadius: 2,
     marginHorizontal: 4,
   },
   dotActive: {
-    backgroundColor: '#8B5CF6',
-    width: 24,
+    width: 40,
+    backgroundColor: '#E97597',
   },
   dotInactive: {
-    backgroundColor: '#E5E7EB',
+    width: 20,
+    backgroundColor: '#D4D4D4',
   },
   button: {
-    backgroundColor: '#8B5CF6',
-    paddingVertical: 16,
-    borderRadius: 12,
+    backgroundColor: '#E97597',
+    paddingVertical: 18,
+    borderRadius: 30,
     alignItems: 'center',
+    shadowColor: '#E97597',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
 });

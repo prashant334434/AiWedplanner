@@ -1,13 +1,33 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '../store/authStore';
+
+const { width } = Dimensions.get('window');
 
 export default function SplashScreen() {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuthStore();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
+    // Entrance animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 20,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     const timer = setTimeout(() => {
       if (!isLoading) {
         if (isAuthenticated) {
@@ -16,49 +36,60 @@ export default function SplashScreen() {
           router.replace('/onboarding');
         }
       }
-    }, 2000);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, [isLoading, isAuthenticated]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Text style={styles.logo}>💍</Text>
-        <Text style={styles.title}>WedPlanner AI</Text>
-        <Text style={styles.tagline}>Your Dream Wedding, Perfectly Planned</Text>
-      </View>
-      <ActivityIndicator size="large" color="#8B5CF6" style={styles.loader} />
-    </View>
+    <LinearGradient
+      colors={['#FFF8F3', '#FFE8DC', '#FFF0E6']}
+      style={styles.container}
+    >
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
+        <View style={styles.logoContainer}>
+          <Text style={styles.logoEmoji}>💍</Text>
+          <Text style={styles.title}>WedPlanner AI</Text>
+          <Text style={styles.tagline}>Your Dream Wedding, Perfectly Planned</Text>
+        </View>
+      </Animated.View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FDFCFB',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  content: {
+    alignItems: 'center',
   },
   logoContainer: {
     alignItems: 'center',
   },
-  logo: {
-    fontSize: 80,
-    marginBottom: 16,
+  logoEmoji: {
+    fontSize: 100,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 8,
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#2D2D2D',
+    marginBottom: 12,
   },
   tagline: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#666666',
     fontStyle: 'italic',
-  },
-  loader: {
-    marginTop: 40,
   },
 });

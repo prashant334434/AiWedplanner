@@ -7,26 +7,26 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getVenues, getVendors } from '../../utils/api';
 
 const categories = [
-  { id: 'venues', title: 'Venues', icon: 'business', color: '#8B5CF6' },
-  { id: 'decorations', title: 'Decorations', icon: 'color-palette', color: '#EC4899' },
-  { id: 'caterers', title: 'Catering', icon: 'restaurant', color: '#F59E0B' },
-  { id: 'photographer', title: 'Photographers', icon: 'camera', color: '#10B981' },
-  { id: 'dj', title: 'DJs & Music', icon: 'musical-notes', color: '#3B82F6' },
-  { id: 'makeup', title: 'Makeup Artists', icon: 'brush', color: '#EF4444' },
+  { id: 'vendor', title: 'Vendor', icon: 'people' },
+  { id: 'venue', title: 'Venue', icon: 'business' },
+  { id: 'dress', title: 'Dress', icon: 'shirt' },
+  { id: 'makeup', title: 'Make up', icon: 'brush' },
 ];
 
 export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [venues, setVenues] = useState<any[]>([]);
-  const [vendors, setVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('vendor');
   const router = useRouter();
 
   useEffect(() => {
@@ -35,12 +35,8 @@ export default function ExploreScreen() {
 
   const loadData = async () => {
     try {
-      const [venuesData, vendorsData] = await Promise.all([
-        getVenues(),
-        getVendors(),
-      ]);
+      const venuesData = await getVenues();
       setVenues(venuesData.slice(0, 3));
-      setVendors(vendorsData.slice(0, 3));
     } catch (error) {
       console.error('Error loading explore data:', error);
     } finally {
